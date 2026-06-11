@@ -1,0 +1,238 @@
+{
+    "log": {
+        "disabled": true,
+        "level": "info",
+        "output": "/var/log/singbox.log",
+        "timestamp": true
+    },
+    "dns": {},
+    "ntp": {},
+    "inbounds": [
+        {
+            "type": "mixed",
+            "tag": "mixed_in",
+            "listen": "::",
+            "listen_port": 4000,
+            "users": [
+                {
+                    "username": "{{ proxy_username }}",
+                    "password": "{{ proxy_password }}"
+                }
+            ]
+        },
+        {
+            "type": "naive",
+            "tag": "naive_in",
+            "listen": "::",
+            "listen_port": 4001,
+            "users": [
+                {
+                    "username": "{{ proxy_username }}",
+                    "password": "{{ proxy_password }}"
+                }
+            ],
+            "tls": {
+                "enabled": true,
+                "certificate_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.fullchain.pem",
+                "key_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.key.pem"
+            }
+        },
+        {
+            "type": "vmess",
+            "tag": "vmess_in",
+            "listen": "::",
+            "listen_port": 4002,
+            "users": [
+                {
+                    "uuid": "{{ uuid }}",
+                    "alterId": 0
+                }
+            ],
+            "transport": {
+                "type": "ws",
+                "path": "/{{ uuid }}",
+                "max_early_data": 2048,
+                "early_data_header_name": "Sec-WebSocket-Protocol"
+            },
+            "tls": {
+                "enabled": true,
+                "certificate_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.fullchain.pem",
+                "key_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.key.pem"
+            }
+        },
+        {
+            "type": "vless",
+            "tag": "vless_in",
+            "listen": "::",
+            "listen_port": 4003,
+            "users": [
+                {
+                    "uuid": "{{ uuid }}"
+                }
+            ],
+            "transport": {
+                "type": "ws",
+                "path": "/{{ uuid }}",
+                "max_early_data": 2048,
+                "early_data_header_name": "Sec-WebSocket-Protocol"
+            },
+            "tls": {
+                "enabled": true,
+                "certificate_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.fullchain.pem",
+                "key_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.key.pem"
+            }
+        },
+        {
+            "type": "hysteria2",
+            "tag": "hysteria2_in",
+            "listen": "::",
+            "listen_port": 4004,
+            "up_mbps": 100,
+            "down_mbps": 100,
+            "obfs": {
+                "type": "salamander",
+                "password": "{{ proxy_password }}"
+            },
+            "users": [
+                {
+                    "name": "{{ proxy_username }}",
+                    "password": "{{ proxy_password }}"
+                }
+            ],
+            "tls": {
+                "enabled": true,
+                "alpn": ["h3"],
+                "certificate_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.fullchain.pem",
+                "key_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.key.pem"
+            }
+        },
+        {
+            "type": "trojan",
+            "tag": "trojan_in",
+            "listen": "::",
+            "listen_port": 4005,
+            "users": [
+                {
+                    "password": "{{ proxy_password }}"
+                }
+            ],
+            "tls": {
+                "enabled": true,
+                "certificate_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.fullchain.pem",
+                "key_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.key.pem"
+            },
+            "multiplex": {
+                "enabled": true
+            }
+        },
+        {
+            "type": "tuic",
+            "tag": "tuic_in",
+            "listen": "::",
+            "listen_port": 4006,
+            "users": [
+                {
+                    "name": "{{ proxy_username }}",
+                    "uuid": "{{ uuid }}",
+                    "password": "{{ proxy_password }}"
+                }
+            ],
+            "congestion_control": "bbr",
+            "zero_rtt_handshake": false,
+            "auth_timeout": "10s",
+            "tls": {
+                "enabled": true,
+                "alpn": ["h3"],
+                "certificate_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.fullchain.pem",
+                "key_path": "/usr/local/openresty/nginx/certs/{{ cert_domain }}.key.pem"
+            }
+        },
+        {
+            "type": "vless",
+            "tag": "vless_reality_in",
+            "listen": "::",
+            "listen_port": 4007,
+            "users": [
+                {
+                    "uuid": "{{ uuid }}",
+                    "flow": "xtls-rprx-vision"
+                }
+            ],
+            "tls": {
+                "enabled": true,
+                "server_name": "{{ reality_server_name }}",
+                "reality": {
+                    "enabled": true,
+                    "handshake": {
+                        "server": "{{ reality_server_name }}",
+                        "server_port": 443
+                    },
+                    "private_key": "{{ reality_private_key }}",
+                    "short_id": [""]
+                }
+            }
+        }
+    ],
+{% if warp_enabled %}
+    "endpoints": [
+        {
+            "type": "wireguard",
+            "tag": "warp_out",
+            "name": "wg0",
+            "mtu": 1280,
+            "address": {{ warp_address | tojson }},
+            "private_key": "{{ warp_private_key }}",
+            "peers": [
+                {
+                    "address": "162.159.192.2",
+                    "port": 2408,
+                    "public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+                    "allowed_ips": ["0.0.0.0/0"],
+                    "persistent_keepalive_interval": 30,
+                    "reserved": [83, 27, 95]
+                }
+            ]
+        }
+    ],
+{% endif %}
+    "outbounds": [
+        {
+            "type": "direct",
+            "tag": "direct_out"
+        }{% if upstream_socks_enabled %},
+        {
+            "type": "socks",
+            "tag": "socks_out",
+            "server": "{{ upstream_socks_server }}",
+            "server_port": {{ upstream_socks_port }},
+            "version": "5",
+            "username": "{{ proxy_username }}",
+            "password": "{{ proxy_password }}"
+        }
+{% endif %}
+    ],
+    "route": {
+        "rules": [
+            {
+                "inbound": [
+                    "naive_in", "vmess_in", "vless_in",
+                    "hysteria2_in", "trojan_in", "tuic_in", "vless_reality_in"
+                ],
+                "action": "sniff",
+                "timeout": "300ms"
+            }{% if upstream_socks_enabled %},
+            {
+                "domain_keyword": [
+                    "chatgpt", "openai", "gemini", "claude", "anthropic",
+                    "groq", "generativeai", "generativelanguage",
+                    "alkalimakersuite-pa.clients6", "antigravity",
+                    "notebooklm", "daily-cloudcode-pa", "cloudcode-pa"
+                ],
+                "outbound": "socks_out"
+            }
+{% endif %}
+        ],
+        "final": "direct_out"
+    },
+    "experimental": {}
+}

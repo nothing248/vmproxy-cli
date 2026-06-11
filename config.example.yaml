@@ -1,0 +1,151 @@
+# =============================================================================
+# 统一集成的 VM 代理服务器运维工具配置文件模板 (多层级域名配置灵活性优化版)
+# =============================================================================
+
+# 1. 全局覆盖参数 (支持子命令配置或命令行参数进行分级覆盖，选填)
+# -----------------------------------------------------------------------------
+# image_id: "e9363571cf2444aba422b17470285465"      # 全局默认系统基础镜像 ID
+# resource_id: "sw-xxxx"                           # 全局默认源主机资源 ID (用于 rotate)
+# acme_email: "you@example.com"                      # 全局默认证书申请注册邮箱
+# state_file: ".proxy_init_state.json"              # 全局默认幂等状态文件路径
+# firewall_ports:                                   # 全局默认防火墙开放端口
+#   - "22"
+#   - "80"
+#   - "443"
+#   - "4000/4006"
+#   - "4007"
+
+# 全局默认的主机 SSH 登录凭据 (若子配置为空，将作为缺省配置)
+# ssh:
+#   user: "root"
+#   port: 22
+#   password: "your_global_ssh_password"
+
+# 全局默认的代理安全凭据 (若子配置为空，将作为缺省配置)
+# singbox:
+#   proxy_username: "your_global_username"
+#   proxy_password: "your_global_password"
+#   uuid: "your-global-uuid"
+
+
+# 2. 云服务提供商通用配置 (首期实现：阿里云 aliyun)
+provider:
+  type: "aliyun"
+  region: "ap-northeast-1"          # 目标区域（常用：ap-northeast-1东京, ap-southeast-1新加坡, cn-hongkong香港）
+  # 凭证更推荐在当前目录下创建 .env 文件注入以保障安全
+  # access_key_id: "your_access_key_id"
+  # access_key_secret: "your_access_key_secret"
+
+  # 阿里云专属配置 (包含多套餐预定义与默认套餐)
+  aliyun:
+    plans:
+      basic:
+        plan_id: "swas.s.c2m05s20b1.linux"           # 轻量服务器套餐规格 ID
+        period: 1                                     # 购买时长(月)
+        charge_type: "PrePaid"                        # 计费类型：PrePaid(包年包月) | PostPaid(按量)
+        auto_renew: false                             # 是否自动续费
+      premium:
+        plan_id: "swas.s.c2m05s20b2.linux"           # 较高配置套餐 ID
+        period: 3
+        charge_type: "PrePaid"
+        auto_renew: true
+    default_plan: "basic"                             # 全局默认选用的套餐别名
+
+# 3. DNS 提供商通用配置 (全局默认配置)
+dns:
+  type: "cloudflare"
+  # api_token: "your_cloudflare_api_token"
+  # zone_id: "your_cloudflare_zone_id"
+  # account_id: "your_cloudflare_account_id"
+  ttl: 60
+  # 全局默认绑定的域名
+  domains:
+    - name: "global.example.com"
+      proxied: false                # 代理协议建议关闭小黄云 CDN 代理
+
+# =============================================================================
+# 4. 初始化专用配置 (vmproxy init)
+# =============================================================================
+init:
+  region: ""                                      # init 专属物理地域，为空则回退选用全局 provider.region
+  image_id: "e9363571cf2444aba422b17470285465"    # 系统基础镜像 ID (留空可回退使用全局 image_id)
+  plan: "basic"                                   # 指定要使用的套餐名，留空则使用默认配置 (provider.aliyun.default_plan)
+  
+  # init 专属绑定的域名列表。优先级高于全局配置。留空则选用全局配置 dns.domains。
+  domains:
+    - name: "init.example.com"
+      proxied: false
+
+  firewall_ports:                                 # 放行的端口列表 (留空则回退选用全局 firewall_ports)
+    - "22"
+    - "80"
+    - "443"
+    - "4000/4006"                                 # 放行的端口范围
+    - "4007"                                      # XTLS Reality 端口
+
+  singbox:                                        # 代理配置 (若留空则选用全局 singbox 配置)
+    proxy_username: "your_username"               # 代理登录名
+    proxy_password: "your_password"               # 代理密码
+    uuid: "your-uuid-here"                        # 代理 UUID (可用 uuidgen 生成)
+    reality:
+      server_name: "www.microsoft.com"            # XTLS Reality 伪装域名
+      private_key: "your_reality_private_key"     # 可用 sing-box generate reality-keypair 生成
+      public_key: "your_reality_public_key"
+    warp:
+      enabled: false                              # 是否启用 WARP WireGuard 出口
+      private_key: "your_warp_private_key"
+      address:
+        - "172.16.0.2/32"
+        - "2606:4700::/128"
+    upstream_socks:
+      enabled: false                              # 是否启用上游 SOCKS5 分流出口
+      server: "us-server.example.com"
+      port: 4000
+
+  server_init:
+    hostname: "jp-vm1"                           # 主机名
+    ssh_user: "root"                              # SSH 用户名 (留空则使用全局 ssh.user)
+    ssh_port: 22                                  # SSH 端口 (留空则使用全局 ssh.port)
+    # ssh_password: ""                            # SSH 密码 (建议使用环境变量 SERVER_SSH_PASSWORD，亦可回退至全局 ssh.password)
+    sync_from_source: false                       # 是否从源主机同步已有的 Nginx 配置及文件
+    source_server_ip: ""                          # sync_from_source 为 true 时必须
+    swap_size_mb: 1024                            # 虚拟内存 Swap 大小 (MB)
+    acme_email: "you@example.com"                 # 证书注册邮箱 (留空则回退选用全局 acme_email)
+    cert_domain: "init.example.com"               # 证书申请域名 (需与生效的域名之一一致)
+
+  subscribe:
+    filename: "sub.txt"                           # 渲染上传的 Base64 订阅文件名
+    remote_dir: "/usr/local/openresty/nginx/html/sub"  # 远端 nginx 订阅目录
+    node_prefix: "jp-ali"                         # 订阅节点名称前缀
+
+  state_file: ".proxy_init_state.json"            # 幂等断点状态文件路径 (向下兼容 legacy 格式 init.state.file)
+
+  retry:
+    instance_start_timeout: 300
+    instance_poll_interval: 15
+    ssh_connect_timeout: 120
+    ssh_connect_interval: 10
+
+# =============================================================================
+# 5. 服务器自动轮换配置 (vmproxy rotate)
+# =============================================================================
+rotation:
+  region: ""                                      # rotate 专属物理地域，为空则回退选用全局 provider.region
+  resource_id: "sw-xxxx"                          # 当前正在运行的旧实例 ID (或克隆模板镜像 ID，留空选用全局 resource_id)
+  plan: "basic"                                   # 指定轮转后产生的新实例套餐别名，留空使用 default_plan
+  
+  # rotation 专属绑定的域名列表。优先级高于全局配置。留空则选用全局配置 dns.domains。
+  domains:
+    - name: "rotate.example.com"
+      proxied: false
+
+  firewall_ports:                                 # 新实例自动开通的防火墙端口列表 (留空选用全局 firewall_ports，向下兼容 legacy 属性 ports)
+    - "22"
+    - "80"
+    - "443"
+    - "4000/4006"
+    - "4007"
+  snapshot_name: "rotation-snapshot"             # 临时自定义快照镜像的名称前缀
+  poll_interval: 15
+  poll_timeout: 600
+  state_file: "rotation_state.json"               # 轮换断点状态文件路径 (留空选用全局 state_file)

@@ -1,0 +1,7 @@
+vmess://{{ uuid }}@{{ domain }}:4002?encryption=auto&security=tls&sni={{ domain }}&fp=chrome&type=ws&path=/{{ uuid }}#{{ node_prefix }}-vmess-ali-self
+vless://{{ uuid }}@{{ domain }}:4007?encryption=none&flow=xtls-rprx-vision&security=reality&sni={{ reality_server_name }}&fp=chrome&pbk={{ reality_public_key }}&type=tcp&headerType=none#{{ node_prefix }}-vless2-ali-self
+vless://{{ uuid }}@{{ domain }}:4003?encryption=none&security=tls&sni={{ domain }}&insecure=0&allowInsecure=0&type=ws&path=%2F{{ uuid }}#{{ node_prefix }}-vless-ali-self
+tuic://{{ uuid }}%3A{{ proxy_password }}@{{ domain }}:4006?sni={{ domain }}&alpn=h3&insecure=0&allowInsecure=0&congestion_control=bbr#{{ node_prefix }}-tuic-ali-self
+trojan://{{ proxy_password }}@{{ domain }}:4005?security=tls&insecure=0&allowInsecure=0&type=tcp&headerType=none#{{ node_prefix }}-trojan-ali-self
+hysteria2://{{ proxy_password }}@{{ domain }}:4004?sni={{ domain }}&insecure=1&allowInsecure=1&obfs=salamander&obfs-password={{ proxy_password }}#{{ node_prefix }}-hysteria2-ali-self
+naive+https://{{ proxy_username }}:{{ proxy_password }}@{{ domain }}:4001/#{{ node_prefix }}-naive-ali-self
