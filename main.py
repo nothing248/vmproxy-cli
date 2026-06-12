@@ -564,11 +564,11 @@ def cmd_rotate(
         from src.state import RotationStateManager
         state_mgr = RotationStateManager(cfg.rotation.state_file)
         state_mgr.load()
-        last_new_instance_id = state_mgr.instance_id
-        if last_new_instance_id:
-            from src.orchestrator.rotation_pipeline import _update_config_resource_id
-            _update_config_resource_id(Path(config), last_new_instance_id)
-            cfg.rotation.resource_id = last_new_instance_id
+        # last_new_instance_id = state_mgr.instance_id
+        # if last_new_instance_id:
+        #     from src.orchestrator.rotation_pipeline import _update_config_resource_id
+        #     _update_config_resource_id(Path(config), last_new_instance_id)
+        #     cfg.rotation.resource_id = last_new_instance_id
         state_mgr.clear()
 
     pipeline = RotationPipeline(
