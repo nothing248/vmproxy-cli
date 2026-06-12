@@ -107,7 +107,7 @@ init:
     hostname: "jp-vm1"                           # 主机名
     ssh_user: "root"                              # SSH 用户名 (留空则使用全局 ssh.user)
     ssh_port: 22                                  # SSH 端口 (留空则使用全局 ssh.port)
-    # ssh_password: ""                            # SSH 密码 (建议使用环境变量 SERVER_SSH_PASSWORD，亦可回退至全局 ssh.password)
+    ssh_password: "Your$tr0ngP@ssword"            # SSH 密码 (亦可回退至全局 ssh.password)
     sync_from_source: false                       # 是否从源主机同步已有的 Nginx 配置及文件
     source_server_ip: ""                          # sync_from_source 为 true 时必须
     swap_size_mb: 1024                            # 虚拟内存 Swap 大小 (MB)
@@ -149,4 +149,4 @@ rotation:
   snapshot_name: "rotation-snapshot"             # 临时自定义快照镜像的名称前缀
   poll_interval: 15
   poll_timeout: 600
-  state_file: "rotation_state.json"               # 轮换断点状态文件路径 (留空选用全局 state_file)
+  state_file: ".rotation_state.json"               # 轮换断点状态文件路径 (留空选用全局 state_file)

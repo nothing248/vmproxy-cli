@@ -103,9 +103,6 @@ class RotationPipeline:
             # 6. 退订旧实例 (仅在输入原为实例 ID 时发起)
             self._refund_old_instance(resource_id)
 
-            # 7. 更新 config.yaml 里的机器 ID
-            _update_config_resource_id(self.config_path, new_instance_id)
-
             # 8. 状态保留提示
             console.print(f"[yellow]提示: 轮换进度状态已保存至 {self.cfg.rotation.state_file}。若要从头开始全新的轮换，请传入 --reset-state。[/yellow]")
 
