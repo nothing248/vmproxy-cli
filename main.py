@@ -315,6 +315,7 @@ def cmd_init(
             icon = "[bold green]✔ 已完成[/bold green]" if done else "[bold red]✘ 未完成[/bold red]"
             console.print(f"  • {name:<12}: {icon}")
             
+         # 格式化对齐
         show_step("1. 实例创建", bool(st.instance_id and st.instance_ip))
         show_step("2. 重置密码", st.password_reset)
         show_step("3. 开放防火墙", st.ports_opened)
