@@ -150,3 +150,15 @@ rotation:
   poll_interval: 15
   poll_timeout: 600
   state_file: ".rotation_state.json"               # 轮换断点状态文件路径 (留空选用全局 state_file)
+
+# =============================================================================
+# 6. 服务器回收拆除配置 (vmproxy teardown)
+# =============================================================================
+teardown:
+  # 专属退订释放的轻量实例 ID (需显式配置，留空且不提供命令行参数将报错)
+  instance_id: ""
+  
+  # 专属退订释放时清理的域名列表 (若留空，则自动选用 rotation.domains > init.domains > dns.domains)
+  # domains:
+  #   - name: "teardown.example.com"
+  #     proxied: false

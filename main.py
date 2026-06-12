@@ -315,16 +315,22 @@ def cmd_init(
 @app.command("teardown")
 def cmd_teardown(
     instance_id: str = typer.Option(
-        ...,
+        "",
         "--instance-id",
         "-i",
-        help="要释放/销毁的轻量实例 ID (格式如 c574f5afcc4d484a82ba1be03519360b)",
+        help="要释放/销毁的轻量实例 ID。留空则自动从配置文件 teardown.instance_id 中获取",
     ),
     config: str = typer.Option(
         "config.yaml",
         "--config",
         "-c",
         help="配置文件路径 (用于读取域名等信息以进行 DNS 清理)",
+    ),
+    domains: str = typer.Option(
+        "",
+        "--domains",
+        "-d",
+        help="指定绑定的域名（多域名用逗号分隔，如 domain1.com,domain2.com）。留空则自动从配置文件 teardown.domains 及其它降级域名中解析合并",
     ),
     skip_dns: bool = typer.Option(
         False,
@@ -343,6 +349,40 @@ def cmd_teardown(
     cfg, provider, dns_provider = build_orchestrators(config)
     state_mgr = InitStateManager(cfg.init.state_file)
 
+    # 1. 解析合并实例 ID 优先级：命令行参数 > teardown.instance_id
+    final_instance_id = instance_id
+    if not final_instance_id:
+        final_instance_id = cfg.teardown.instance_id
+    
+    if not final_instance_id and not skip_refund:
+        console.print("[bold red]❌ 错误:[/bold red] 未能确定要退订的实例 ID，请在配置文件中指定 'teardown.instance_id'，或通过 -i/--instance-id 命令行参数指定！", style="red")
+        raise typer.Exit(code=1)
+
+    # 2. 解析并合并域名优先级：命令行参数 > teardown.domains > rotation.domains > init.domains > 全局 dns.domains
+    global_proxied = cfg.dns.domains[0].proxied if cfg.dns.domains else False
+    if domains:
+        final_domains = []
+        for name in domains.split(","):
+            name = name.strip()
+            if name:
+                final_domains.append(DomainEntry(name=name, proxied=global_proxied))
+    else:
+        final_domains = cfg.teardown.domains
+        if not final_domains:
+            final_domains = cfg.rotation.domains
+        if not final_domains:
+            final_domains = cfg.init.domains
+        if not final_domains:
+            final_domains = cfg.dns.domains
+
+    if not final_domains and not skip_dns:
+        console.print("[bold red]❌ 错误:[/bold red] 必须在配置文件中指定域名绑定，或通过 -d/--domains 命令行参数指定！", style="red")
+        raise typer.Exit(code=1)
+
+    # 动态将最终生效的域名列表写回
+    cfg.dns.domains = final_domains
+    dns_provider.domains = final_domains
+
     pipeline = InitPipeline(
         cfg=cfg,
         provider=provider,
@@ -350,7 +390,7 @@ def cmd_teardown(
         state=state_mgr,
     )
     pipeline.teardown(
-        instance_id=instance_id,
+        instance_id=final_instance_id,
         skip_dns=skip_dns,
         skip_refund=skip_refund,
     )

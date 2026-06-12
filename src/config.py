@@ -142,6 +142,12 @@ class RotationPipelineConfig:
     region: str = ""
 
 
+@dataclass
+class TeardownPipelineConfig:
+    instance_id: str = ""
+    domains: List[DomainEntry] = field(default_factory=list)
+
+
 # ─── 统一集成的 AppConfig ──────────────────────────────────────────
 
 @dataclass
@@ -150,6 +156,7 @@ class AppConfig:
     dns: DNSConfig = field(default_factory=DNSConfig)
     init: InitPipelineConfig = field(default_factory=InitPipelineConfig)
     rotation: RotationPipelineConfig = field(default_factory=RotationPipelineConfig)
+    teardown: TeardownPipelineConfig = field(default_factory=TeardownPipelineConfig)
     ssh: GlobalSSHConfig = field(default_factory=GlobalSSHConfig)
     singbox: GlobalSingboxConfig = field(default_factory=GlobalSingboxConfig)
     acme_email: str = ""
@@ -518,11 +525,20 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
         region=rot_raw.get("region", ""),
     )
 
+    # 6. 提取 Teardown 配置
+    teardown_raw = raw.get("teardown", {})
+    td_domains = _parse_domains(teardown_raw.get("domains", []), global_proxied)
+    teardown_pipeline_cfg = TeardownPipelineConfig(
+        instance_id=teardown_raw.get("instance_id", ""),
+        domains=td_domains,
+    )
+
     return AppConfig(
         provider=provider_cfg,
         dns=dns_cfg,
         init=init_pipeline_cfg,
         rotation=rotation_pipeline_cfg,
+        teardown=teardown_pipeline_cfg,
         ssh=global_ssh,
         singbox=global_sb,
         acme_email=global_acme_email,
