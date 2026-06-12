@@ -14,6 +14,7 @@
 #   - "443"
 #   - "4000/4006"
 #   - "4007"
+# node_prefix: "global-node-prefix"                  # 全局默认订阅节点名称前缀
 
 # 全局默认的主机 SSH 登录凭据 (若子配置为空，将作为缺省配置)
 # ssh:
@@ -111,12 +112,12 @@ init:
     source_server_ip: ""                          # sync_from_source 为 true 时必须
     swap_size_mb: 1024                            # 虚拟内存 Swap 大小 (MB)
     acme_email: "you@example.com"                 # 证书注册邮箱 (留空则回退选用全局 acme_email)
-    cert_domain: "init.example.com"               # 证书申请域名 (需与生效的域名之一一致)
+    cert_domain: ""                               # 证书申请域名 (留空则在运行时自动获取生效域名列表 domains 的首项)
 
   subscribe:
     filename: "sub.txt"                           # 渲染上传的 Base64 订阅文件名
     remote_dir: "/usr/local/openresty/nginx/html/sub"  # 远端 nginx 订阅目录
-    node_prefix: "jp-ali"                         # 订阅节点名称前缀
+    node_prefix: "jp-ali"                         # 订阅节点名称前缀 (优先级: init.subscribe.node_prefix > init.node_prefix > 全局 node_prefix)
 
   state_file: ".proxy_init_state.json"            # 幂等断点状态文件路径 (向下兼容 legacy 格式 init.state.file)
 

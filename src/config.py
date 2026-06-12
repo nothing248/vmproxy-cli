@@ -157,6 +157,7 @@ class AppConfig:
     resource_id: str = ""
     firewall_ports: List[str] = field(default_factory=list)
     state_file: str = ""
+    node_prefix: str = "node"
 
 
 # ─── 配置加载辅助函数 ───────────────────────────────────────────────
@@ -239,6 +240,7 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
     global_resource_id = raw.get("resource_id", "")
     global_fw_ports = [_normalize_port(p) for p in raw.get("firewall_ports", [])]
     global_state_file = raw.get("state_file", "")
+    global_node_prefix = raw.get("node_prefix", "node")
 
     # 2. 解析 Provider 配置
     provider_raw = raw.get("provider", {})
@@ -393,6 +395,11 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
     if not si_acme_email and "dns" in raw and "acme_email" in raw["dns"]:
         si_acme_email = raw["dns"]["acme_email"]
 
+    effective_domains = init_domains if init_domains else dns_domains
+    cert_domain_val = si_raw.get("cert_domain")
+    if not cert_domain_val:
+        cert_domain_val = effective_domains[0].name if effective_domains else ""
+
     server_init_cfg = ServerInitConfig(
         hostname=si_raw.get("hostname", ""),
         ssh_user=si_ssh_user,
@@ -402,15 +409,25 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
         source_server_ip=si_raw.get("source_server_ip", ""),
         swap_size_mb=int(si_raw.get("swap_size_mb", 1024)),
         acme_email=si_acme_email,
-        cert_domain=si_raw.get("cert_domain", ""),
+        cert_domain=cert_domain_val,
     )
 
     # 提取 subscribe
     sub_raw = init_raw.get("subscribe", {})
+    
+    # 优先级：init.subscribe.node_prefix > init.node_prefix > 全局 node_prefix > "node"
+    node_prefix_val = sub_raw.get("node_prefix")
+    if node_prefix_val is None:
+        node_prefix_val = init_raw.get("node_prefix")
+    if node_prefix_val is None:
+        node_prefix_val = global_node_prefix
+    if node_prefix_val is None:
+        node_prefix_val = "node"
+
     subscribe_cfg = SubscribeConfig(
         filename=sub_raw.get("filename", "sub.txt"),
         remote_dir=sub_raw.get("remote_dir", "/usr/local/openresty/nginx/html/sub"),
-        node_prefix=sub_raw.get("node_prefix", "node"),
+        node_prefix=node_prefix_val,
     )
 
     # 提取 state_file 并向下兼容
@@ -517,6 +534,7 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
         resource_id=global_resource_id,
         firewall_ports=global_fw_ports,
         state_file=global_state_file,
+        node_prefix=global_node_prefix,
     )
 
 

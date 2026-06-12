@@ -212,6 +212,11 @@ def cmd_init(
         "--acme-email",
         help="覆盖 acme.sh 证书注册邮箱",
     ),
+    node_prefix: str = typer.Option(
+        "",
+        "--node-prefix",
+        help="覆盖订阅节点名称前缀",
+    ),
     reset_state: bool = typer.Option(
         False,
         "--reset-state",
@@ -258,6 +263,8 @@ def cmd_init(
         cfg.init.server_init.ssh_password = ssh_password
     if acme_email:
         cfg.init.server_init.acme_email = acme_email
+    if node_prefix:
+        cfg.init.subscribe.node_prefix = node_prefix
 
     # 提前校验所选套餐是否合法
     chosen_plan = plan or cfg.init.plan
@@ -286,6 +293,10 @@ def cmd_init(
     # 动态将最终生效的域名列表写回
     cfg.dns.domains = final_domains
     dns_provider.domains = final_domains
+
+    # 自动将第一个生效域名设置为 cert_domain（若未配置）
+    if not cfg.init.server_init.cert_domain:
+        cfg.init.server_init.cert_domain = final_domains[0].name
 
     state_mgr = InitStateManager(cfg.init.state_file)
 

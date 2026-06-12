@@ -30,6 +30,12 @@ class InitPipeline:
         self.state_mgr = state
         self.engine = TemplateEngine(cfg)
 
+    def _primary_domain(self) -> str:
+        """获取当前生效的第一个域名"""
+        if not self.cfg.dns.domains:
+            raise ValueError("DNS 配置中没有提供任何域名记录")
+        return self.cfg.dns.domains[0].name
+
     def run(self, plan_name: str = "", dry_run: bool = False) -> None:
         """运行完整的快速初始化流程"""
         if dry_run:
