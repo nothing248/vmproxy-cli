@@ -222,6 +222,11 @@ def cmd_init(
         "--reset-state",
         help="清除历史断点状态文件，从第一步重新开始",
     ),
+    status: bool = typer.Option(
+        False,
+        "--status",
+        help="查看当前初始化任务的断点进度状态",
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -299,6 +304,26 @@ def cmd_init(
         cfg.init.server_init.cert_domain = final_domains[0].name
 
     state_mgr = InitStateManager(cfg.init.state_file)
+
+    if status:
+        console.print("\n[bold cyan]📊 当前服务器初始化任务进度状态：[/bold cyan]")
+        st = state_mgr.state
+        console.print(f"  • 实例 ID   : {st.instance_id or 'None'}")
+        console.print(f"  • 公网 IP   : {st.instance_ip or 'None'}")
+        
+        def show_step(name: str, done: bool):
+            icon = "[bold green]✔ 已完成[/bold green]" if done else "[bold red]✘ 未完成[/bold red]"
+            console.print(f"  • {name:<12}: {icon}")
+            
+        show_step("1. 实例创建", bool(st.instance_id and st.instance_ip))
+        show_step("2. 重置密码", st.password_reset)
+        show_step("3. 开放防火墙", st.ports_opened)
+        show_step("4. DNS A记录", st.dns_updated)
+        show_step("5. 同步配置文件", st.config_synced)
+        show_step("6. 远端系统初始化", st.server_initialized)
+        show_step("7. 部署并上传订阅", st.subscribe_uploaded)
+        console.print()
+        raise typer.Exit(code=0)
 
     if reset_state:
         state_mgr.reset()
@@ -448,6 +473,11 @@ def cmd_rotate(
         "--reset-state",
         help="清除历史断点状态文件，从第一步重新开始",
     ),
+    status: bool = typer.Option(
+        False,
+        "--status",
+        help="查看当前轮换任务的断点进度状态",
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -506,6 +536,29 @@ def cmd_rotate(
     if not cfg.rotation.resource_id:
         console.print("[bold red]❌ 错误:[/bold red] 必须在配置文件中指定 'resource_id' 节点，或通过 --resource-id 命令行参数指定！", style="red")
         raise typer.Exit(code=1)
+
+    if status:
+        from src.state import RotationStateManager
+        state_mgr = RotationStateManager(cfg.rotation.state_file)
+        state_mgr.load()
+        
+        console.print("\n[bold cyan]📊 当前服务器自动轮换任务进度状态：[/bold cyan]")
+        console.print(f"  • 源实例 ID : {state_mgr.resource_id or 'None'}")
+        console.print(f"  • 自定义镜像: {state_mgr.image_id or 'None'}")
+        console.print(f"  • 新实例 ID : {state_mgr.instance_id or 'None'}")
+        console.print(f"  • 新公网 IP : {state_mgr.public_ip or 'None'}")
+        
+        def show_step(name: str, done: bool):
+            icon = "[bold green]✔ 已完成[/bold green]" if done else "[bold red]✘ 未完成[/bold red]"
+            console.print(f"  • {name:<12}: {icon}")
+            
+        show_step("1. 镜像制备", bool(state_mgr.image_id))
+        show_step("2. 新机器开通", bool(state_mgr.instance_id))
+        show_step("3. 防火墙开通", state_mgr.ports_opened)
+        show_step("4. DNS 解析切换", state_mgr.dns_updated)
+        show_step("5. 旧实例退款释放", state_mgr.refunded)
+        console.print()
+        raise typer.Exit(code=0)
 
     if reset_state:
         from src.state import RotationStateManager
