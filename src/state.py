@@ -144,6 +144,10 @@ class RotationStateManager:
     def dns_updated(self) -> bool:
         return bool(self._data.get("dns_updated", False))
 
+    @property
+    def refunded(self) -> bool:
+        return bool(self._data.get("refunded", False))
+
     def set_resource_id(self, v: str) -> None:
         self._data.setdefault("created_at", time.time())
         self._data["resource_id"] = v
@@ -167,6 +171,10 @@ class RotationStateManager:
 
     def set_dns_updated(self) -> None:
         self._data["dns_updated"] = True
+        self.save()
+
+    def set_refunded(self) -> None:
+        self._data["refunded"] = True
         self.save()
 
     def is_stale(self, current_resource_id: str) -> bool:

@@ -211,9 +211,14 @@ class RotationPipeline:
             console.print(" [bold green]✔[/bold green] [步骤 5] 源资源为镜像，跳过退订释放实例流程。")
             return
 
+        if self.state_mgr.refunded:
+            console.print(" [bold green]✔[/bold green] [步骤 5] 跳过 — 旧实例退款/释放此前已成功提请。")
+            return
+
         with console.status(f"[bold cyan][步骤 5] 正在向云商提请退款并释放旧实例 {old_instance_id} …[/bold cyan]"):
             try:
                 self.provider.refund_instance(old_instance_id)
+                self.state_mgr.set_refunded()
                 console.print(f" [bold green]✔[/bold green] [步骤 5] 旧实例退款/释放命令发送完毕。")
             except Exception as exc:
                 # 阿里云退订可能因为账号风控等原因抛异常，这是一个非致命阻断

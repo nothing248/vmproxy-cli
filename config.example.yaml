@@ -112,7 +112,7 @@ init:
     source_server_ip: ""                          # sync_from_source 为 true 时必须
     swap_size_mb: 1024                            # 虚拟内存 Swap 大小 (MB)
     acme_email: "you@example.com"                 # 证书注册邮箱 (留空则回退选用全局 acme_email)
-    cert_domain: ""                               # 证书申请域名 (留空则在运行时自动获取生效域名列表 domains 的首项)
+    # cert_domain: ""                               # 证书申请域名 (留空则在运行时自动获取生效域名列表 domains 的首项)
 
   subscribe:
     filename: "sub.txt"                           # 渲染上传的 Base64 订阅文件名
