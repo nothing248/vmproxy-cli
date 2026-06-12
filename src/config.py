@@ -225,7 +225,7 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
     global_ssh = GlobalSSHConfig(
         user=global_ssh_raw.get("user", "root") if global_ssh_raw else "root",
         port=int(global_ssh_raw.get("port", 22)) if global_ssh_raw and global_ssh_raw.get("port") else 22,
-        password=os.environ.get("SERVER_SSH_PASSWORD", global_ssh_raw.get("password", "") if global_ssh_raw else ""),
+        password=global_ssh_raw.get("password", "") if global_ssh_raw else "",
     )
 
     global_sb_raw = raw.get("singbox", {})
@@ -383,9 +383,7 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
     if si_ssh_user is None:
         si_ssh_user = global_ssh.user
 
-    si_ssh_password = os.environ.get("SERVER_SSH_PASSWORD")
-    if not si_ssh_password:
-        si_ssh_password = si_raw.get("ssh_password")
+    si_ssh_password = si_raw.get("ssh_password")
     if not si_ssh_password:
         si_ssh_password = global_ssh.password
 
@@ -498,9 +496,7 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
     snapshot_base = rot_raw.get("snapshot_name", "rotation-snapshot")
     snapshot_name = f"{snapshot_base}-{uuid_suffix()}"
 
-    res_id = os.environ.get("RESOURCE_ID")
-    if not res_id:
-        res_id = rot_raw.get("resource_id")
+    res_id = rot_raw.get("resource_id")
     if not res_id:
         res_id = global_resource_id
 

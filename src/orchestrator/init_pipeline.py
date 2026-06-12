@@ -218,7 +218,7 @@ class InitPipeline:
             ssh.exec(f"chmod +x {remote_init_path}")
             
             # 由于指令执行过程需要实时看到系统安装状态，这里用 print 打印其标准输出，保持终端可见性
-            ssh.exec(f"bash {remote_init_path}", check=True)
+            ssh.exec(f"bash {remote_init_path} > /tmp/init.log 2>&1", check=True)
 
         self.state_mgr.mark_server_initialized()
         console.print(" [bold green]✔[/bold green] [Step 5] 完成 — 远端初始化脚本执行完毕。")

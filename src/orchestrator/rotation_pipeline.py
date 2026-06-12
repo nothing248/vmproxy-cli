@@ -22,8 +22,8 @@ def _update_config_resource_id(config_path: Path, new_instance_id: str) -> None:
         return
 
     text = config_path.read_text(encoding="utf-8")
-    # 正则表达式匹配没有被注释的 resource_id: "xxx"
-    pattern = r'^(resource_id:\s*)["\']([^"\']*)["\']'
+    # 正则表达式匹配没有被注释的 resource_id: "xxx" (支持行首缩进)
+    pattern = r'^(\s*resource_id:\s*)["\']([^"\']*)["\']'
     replacement = f'\\g<1>"{new_instance_id}"'
     new_text, count = re.subn(pattern, replacement, text, flags=re.MULTILINE)
 
@@ -106,11 +106,8 @@ class RotationPipeline:
             # 7. 更新 config.yaml 里的机器 ID
             _update_config_resource_id(self.config_path, new_instance_id)
 
-            # 8. 清理状态
-            if not skip_dns:
-                self.state_mgr.clear()
-            else:
-                console.print(f"[yellow]提示: 由于跳过了 DNS 更新，状态文件已保留 ({self.cfg.rotation.state_file})。再次运行且不加 --skip-dns 可补充完工。[/yellow]")
+            # 8. 状态保留提示
+            console.print(f"[yellow]提示: 轮换进度状态已保存至 {self.cfg.rotation.state_file}。若要从头开始全新的轮换，请传入 --reset-state。[/yellow]")
 
         except Exception as exc:
             console.print(f"\n[bold red]❌ 轮换过程中断:[/bold red] {exc}", style="red")

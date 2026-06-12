@@ -403,6 +403,11 @@ def cmd_rotate(
         "--skip-dns",
         help="跳过 DNS A 记录绑定切换步骤",
     ),
+    reset_state: bool = typer.Option(
+        False,
+        "--reset-state",
+        help="清除历史断点状态文件，从第一步重新开始",
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -461,6 +466,11 @@ def cmd_rotate(
     if not cfg.rotation.resource_id:
         console.print("[bold red]❌ 错误:[/bold red] 必须在配置文件中指定 'resource_id' 节点，或通过 --resource-id 命令行参数指定！", style="red")
         raise typer.Exit(code=1)
+
+    if reset_state:
+        from src.state import RotationStateManager
+        state_mgr = RotationStateManager(cfg.rotation.state_file)
+        state_mgr.clear()
 
     pipeline = RotationPipeline(
         config_path=Path(config),
