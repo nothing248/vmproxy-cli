@@ -108,8 +108,6 @@ init:
     ssh_user: "root"                              # SSH 用户名 (留空则使用全局 ssh.user)
     ssh_port: 22                                  # SSH 端口 (留空则使用全局 ssh.port)
     ssh_password: "Your$tr0ngP@ssword"            # SSH 密码 (亦可回退至全局 ssh.password)
-    sync_from_source: false                       # 是否从源主机同步已有的 Nginx 配置及文件
-    source_server_ip: ""                          # sync_from_source 为 true 时必须
     swap_size_mb: 1024                            # 虚拟内存 Swap 大小 (MB)
     acme_email: "you@example.com"                 # 证书注册邮箱 (留空则回退选用全局 acme_email)
     # cert_domain: ""                               # 证书申请域名 (留空则在运行时自动获取生效域名列表 domains 的首项)

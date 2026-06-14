@@ -11,16 +11,10 @@ set -euo pipefail
 # ============================================================
 # 全局变量配置（由 Python 脚本渲染后填入）
 # ============================================================
-SOURCE_SERVER="root@{{ source_server_ip }}"
-SYNC_FROM_SOURCE={{ 'true' if sync_from_source else 'false' }}
 HOSTNAME_NEW="{{ hostname }}"
 SWAP_FILE="/mnt/swapfile"
 SWAP_SIZE_MB={{ swap_size_mb }}
 SOFTWARE_DIR="/opt/software"
-FRP_VERSION="0.67.0"
-FRP_ARCH="linux_amd64"
-FRP_DIR_NAME="frp_${FRP_VERSION}_${FRP_ARCH}"
-FRP_INSTALL_DIR="${SOFTWARE_DIR}/${FRP_DIR_NAME}"
 ACME_HOME="${SOFTWARE_DIR}/acmesh"
 ACME_EMAIL="{{ acme_email }}"
 CF_Token="{{ cf_token }}"
@@ -55,28 +49,7 @@ check_root() {
     fi
 }
 
-# ============================================================
-# 1. 同步登录凭据
-# ============================================================
-setup_ssh_keys() {
-    log_section "1. 同步登录凭据"
-{% if sync_from_source %}
-    if [[ ! -f "$HOME/.ssh/id_rsa" && ! -f "$HOME/.ssh/id_ed25519" ]]; then
-        log_info "生成 SSH 密钥对..."
-        ssh-keygen -t ed25519 -N "" -f "$HOME/.ssh/id_ed25519"
-    else
-        log_info "SSH 密钥已存在，跳过生成"
-    fi
 
-    log_info "将本机公钥复制到源服务器 ${SOURCE_SERVER}..."
-    ssh-copy-id -o StrictHostKeyChecking=no "${SOURCE_SERVER}"
-
-    log_info "将源服务器加入本机 known_hosts..."
-    ssh-keyscan "$(echo "${SOURCE_SERVER}" | cut -d@ -f2)" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
-{% else %}
-    log_info "sync_from_source=false，跳过源服务器凭据同步"
-{% endif %}
-}
 
 # ============================================================
 # 2. 去除阿里云内置监控控件 (cloudmonitor)
@@ -275,14 +248,6 @@ EOF
         log_info "sing-box 安装完成"
     fi
 
-    log_info "同步 sing-box 配置..."
-{% if sync_from_source %}
-    rsync -avzP -e "ssh -o StrictHostKeyChecking=no" \
-        "${SOURCE_SERVER}:/etc/sing-box/config.json" /etc/sing-box/config.json
-{% else %}
-    log_info "sync_from_source=false，sing-box 配置已由 Python 脚本直接上传，跳过 rsync"
-{% endif %}
-
     systemctl enable --now sing-box
     log_info "sing-box 已启动并设为开机自启"
 }
@@ -312,21 +277,6 @@ http://openresty.org/package/ubuntu $(lsb_release -sc) main" \
         apt-get install -y openresty
         log_info "OpenResty 安装完成"
     fi
-
-    log_info "同步 nginx 配置及静态文件..."
-{% if sync_from_source %}
-    rsync -avzP -e "ssh -o StrictHostKeyChecking=no" \
-        "${SOURCE_SERVER}:/usr/local/openresty/nginx/conf/nginx.conf" \
-        /usr/local/openresty/nginx/conf/nginx.conf
-    rsync -avzP -e "ssh -o StrictHostKeyChecking=no" \
-        "${SOURCE_SERVER}:/usr/local/openresty/nginx/conf/conf.d" \
-        /usr/local/openresty/nginx/conf/
-    rsync -avzP -e "ssh -o StrictHostKeyChecking=no" \
-        "${SOURCE_SERVER}:/usr/local/openresty/nginx/html/" \
-        /usr/local/openresty/nginx/html/
-{% else %}
-    log_info "sync_from_source=false，跳过 nginx 配置同步"
-{% endif %}
 
     mkdir -p "${CERT_DIR}"
     log_info "证书目录已创建: ${CERT_DIR}"
@@ -408,7 +358,6 @@ main() {
     log_section "服务器环境初始化开始"
     check_root
 
-    setup_ssh_keys
     remove_aliyun_cloudmonitor
     remove_aliyun_aegis
     remove_aliyun_assist

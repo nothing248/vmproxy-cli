@@ -280,7 +280,7 @@ def cmd_init(
         raise typer.Exit(code=1)
 
     # 解析并合并域名优先级
-    global_proxied = cfg.dns.domains[0].proxied if cfg.dns.domains else False
+    global_proxied = cfg.dns.domains[0].proxied if cfg.dns.domains else True
     if domains:
         final_domains = []
         for name in domains.split(","):
@@ -385,7 +385,7 @@ def cmd_teardown(
         raise typer.Exit(code=1)
 
     # 2. 解析并合并域名优先级：命令行参数 > teardown.domains > rotation.domains > init.domains > 全局 dns.domains
-    global_proxied = cfg.dns.domains[0].proxied if cfg.dns.domains else False
+    global_proxied = cfg.dns.domains[0].proxied if cfg.dns.domains else True
     if domains:
         final_domains = []
         for name in domains.split(","):
@@ -514,7 +514,7 @@ def cmd_rotate(
         raise typer.Exit(code=1)
 
     # 解析并合并域名优先级
-    global_proxied = cfg.dns.domains[0].proxied if cfg.dns.domains else False
+    global_proxied = cfg.dns.domains[0].proxied if cfg.dns.domains else True
     if domains:
         final_domains = []
         for name in domains.split(","):

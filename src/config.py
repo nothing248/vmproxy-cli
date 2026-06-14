@@ -23,7 +23,7 @@ class ProviderConfig:
 @dataclass
 class DomainEntry:
     name: str
-    proxied: bool
+    proxied: bool = True
 
 
 @dataclass
@@ -91,8 +91,6 @@ class ServerInitConfig:
     ssh_user: str = "root"
     ssh_port: int = 22
     ssh_password: str = ""
-    sync_from_source: bool = False
-    source_server_ip: str = ""
     swap_size_mb: int = 1024
     acme_email: str = ""
     cert_domain: str = ""
@@ -285,7 +283,7 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
         dns_raw = raw["cloudflare"]
 
     dns_type = dns_raw.get("type", "cloudflare")
-    global_proxied = dns_raw.get("proxied", False)
+    global_proxied = dns_raw.get("proxied", True)
     dns_domains = _parse_domains(dns_raw.get("domains", []), global_proxied)
 
     dns_cfg = DNSConfig(
@@ -410,8 +408,6 @@ def load_config(config_path: str = "config.yaml") -> AppConfig:
         ssh_user=si_ssh_user,
         ssh_port=si_ssh_port,
         ssh_password=si_ssh_password,
-        sync_from_source=bool(si_raw.get("sync_from_source", False)),
-        source_server_ip=si_raw.get("source_server_ip", ""),
         swap_size_mb=int(si_raw.get("swap_size_mb", 1024)),
         acme_email=si_acme_email,
         cert_domain=cert_domain_val,

@@ -90,8 +90,6 @@ class TemplateEngine:
         dns = self.cfg.dns
         tmpl = self._env.get_template("init.sh.j2")
         ctx = dict(
-            sync_from_source=si.sync_from_source,
-            source_server_ip=si.source_server_ip,
             hostname=si.hostname,
             swap_size_mb=si.swap_size_mb,
             acme_email=si.acme_email,
