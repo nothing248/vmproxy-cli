@@ -244,7 +244,7 @@ Signed-By: /etc/apt/keyrings/sagernet.asc
 EOF
 
         apt-get update -q
-        apt-get install -y sing-box
+        DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y sing-box
         log_info "sing-box 安装完成"
     fi
 
